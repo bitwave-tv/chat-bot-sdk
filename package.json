@@ -1,0 +1,29 @@
+{
+  "name": "@bitwave/chat-bot",
+  "version": "0.1.0",
+  "description": "A simple bot library for [bitwave.tv]'s chat",
+  "main": "lib.js",
+  "scripts": {
+    "test": "echo \"TODO: testing. Nothing to see here. Move along...\""
+  },
+  "keywords": [
+    "bot",
+    "library",
+    "chat",
+    "bitwave"
+  ],
+  "author": "dvdrw",
+  "license": "LGPL-3.0",
+  "dependencies": {
+    "@bitwave/chat-client": "^0.1.1"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bitwave-tv/chat-bot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bitwave-tv/chat-bot/issues"
+  },
+  "homepage": "https://github.com/bitwave-tv/chat-bot#readme"
+}
