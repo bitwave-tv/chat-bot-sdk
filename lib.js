@@ -1,5 +1,5 @@
 "use strict";
-import api from './api.js';
+import api from '@bitwave/chat-client';
 
 let config = {
     room: 'global',
