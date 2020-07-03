@@ -1,6 +1,9 @@
 "use strict";
 import api from '@bitwave/chat-client';
 
+import TurndownService from 'turndown';
+const turndownService = new TurndownService();
+
 let config = {
     room: 'global',
     global: false,
@@ -51,33 +54,30 @@ const reduceHtml = m => {
             .replace( /&#39;/g,  `'` );
     };
 
-    // <blockquote> -> green text
-    mp.message = mp.message.replace(  /<\/?blockquote>/g, "" );
-    mp.message = unescapeHtml( mp.message );
-
-    // <span> -> 8chan green text
-    mp.message = mp.message.replace(  /<\/?span[\w =#"':\/\\.\-?]*>/gi, "" );
-
     // <p></p>
     mp.message = mp.message.replace( /<\/?p[\w =#"':\/\\.\-?]*>/gi, "" );
 
-    // TODO: investigate if custom links can appear
     // <a>gets left</a>
-    mp.message = mp.message.replace( /<\/?a[\w =#"':\/\\.]*>/gi, "" );
-
-    mp.message = mp.message.replace( "<h1>", "# " );
-    mp.message = mp.message.replace( "<h2>", "## " );
-    mp.message = mp.message.replace( "<h3>", "### " );
-    mp.message = mp.message.replace( "<h4>", "#### " );
-    mp.message = mp.message.replace( "<h5>", "##### " );
-
-    mp.message = mp.message.replace( /<\/h[1-5]/, "" );
-
+    // Custom links are text in <a>, and then the link in <kbd>
+    mp.message = mp.message.replace( /<\/?a[\w -=#"':\/\\.\-?]*>/gi, "" );
+    mp.message = mp.message.replace( "<kbd>", "" );
+    mp.message = mp.message.replace( "</kbd>", "" );
 
     // <img> to :emotes:
-    mp.message = mp.message.replace( /<img[\w =#"':\/\\.\-?]*>/gi, m => {
-        return m.match( /:\w+:/ )[0];
+    mp.message = mp.message.replace( /<img[\w -=#"':\/\\.\-?]*>/gi, m => {
+        // (((, ))), :), :( are rendered differently
+        // (They dont even show up in the emote list)
+        //
+        // It wouldn't be so bad if the two echos were 'echol' and 'echor', but
+        //  one echo is flipped with CSS.
+        if( m.includes('alt="echo"') ) {
+            return m.includes('scaleX(-1)') ? "(((" : ")))";
+        }
+        return m.match( /alt="([\w:()]+)"/ )[1];
     });
+
+    mp.message = turndownService.turndown( mp.message );
+
     return mp;
 };
 
