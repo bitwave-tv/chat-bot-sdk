@@ -1,5 +1,6 @@
 "use strict";
 import api from '@bitwave/chat-client';
+import $log from './log.js';
 
 import TurndownService from 'turndown';
 const turndownService = new TurndownService();
@@ -85,19 +86,44 @@ const roomCheck = ( m ) => {
     return ( m.channel !== config.room && !config.global ) ? undefined : m;
 };
 
+const commandParserSettings = {
+    prefix: '!',
+    commands: new Map(),
+};
+const isCommand = m => {
+    return m.message.startsWith( commandParserSettings.prefix ) ? m : false;
+};
+const commandParser = m => {
+    // removes prefix
+    m.message = m.message.replace( commandParserSettings.prefix, "" );
+    const args = m.message.split(' ');
+
+    const command = commandParserSettings.commands.get(args[0]);
+    if( command ) {
+        command( args.splice(0, 1) );
+    } else {
+        $log.info( `No command ${args[0]} found` );
+    }
+};
+
 export default {
 
     get config() { return config; },
     set config(c) { config = c; },
 
-    transformers: [ reduceHtml ],
-    filters: [ roomCheck ],
+    get commandParserSettings() { return commandParserSettings; },
+    set commandParserSettings(s) { commandParserSettings = s; },
 
-    consumer( m ) { console.log( m ); },
+    transformers: [ reduceHtml ],
+    filters: [ roomCheck, isCommand ],
+
+    consumer( m ) { commandParser( m ); console.log( m ); },
 
     async init() {
         api.rcvMessageBulk = ms => handleMessages( this, ms );
         await api.init( this.config.room, this.config.credentials );
-    }
+    },
+
+    send( msg ) { api.sendMessage(msg); }
 
 };
