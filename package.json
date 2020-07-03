@@ -15,7 +15,8 @@
   "author": "dvdrw",
   "license": "LGPL-3.0",
   "dependencies": {
-    "@bitwave/chat-client": "^0.1.1"
+    "@bitwave/chat-client": "^0.1.4",
+    "turndown": "^6.0.0"
   },
   "devDependencies": {},
   "repository": {
