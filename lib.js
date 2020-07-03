@@ -117,7 +117,7 @@ export default {
     transformers: [ reduceHtml ],
     filters: [ roomCheck, isCommand ],
 
-    consumer( m ) { commandParser( m ); console.log( m ); },
+    consumer( m ) { console.log( m ); commandParser( m ); },
 
     async init() {
         api.rcvMessageBulk = ms => handleMessages( this, ms );
