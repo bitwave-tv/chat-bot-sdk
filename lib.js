@@ -100,7 +100,7 @@ const commandParser = m => {
 
     const command = commandParserSettings.commands.get(args[0]);
     if( command ) {
-        command( args.splice(0, 1) );
+        command( m, args.splice(1, 1) );
     } else {
         $log.info( `No command ${args[0]} found` );
     }
@@ -124,6 +124,13 @@ export default {
         await api.init( this.config.room, this.config.credentials );
     },
 
-    send( msg ) { api.sendMessage(msg); }
+    send( msg ) {
+        api.sendMessage({
+            message: msg,
+            channel: this.config.room,
+            global: this.config.global,
+            showBadge: true,
+        });
+    },
 
 };
