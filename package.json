@@ -1,6 +1,6 @@
 {
   "name": "@bitwave/chat-bot",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A simple bot library for [bitwave.tv]'s chat",
   "main": "lib.js",
   "scripts": {
@@ -15,7 +15,8 @@
   "author": "dvdrw",
   "license": "LGPL-3.0",
   "dependencies": {
-    "@bitwave/chat-client": "^0.1.1"
+    "@bitwave/chat-client": "^0.1.4",
+    "turndown": "^6.0.0"
   },
   "devDependencies": {},
   "repository": {
