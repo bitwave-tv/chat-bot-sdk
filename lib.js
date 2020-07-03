@@ -134,7 +134,8 @@ export default {
     },
 
     sendToChannel( msg, channel ) {
-        this.config.room = m.channel;
+        const oldRoom = this.config.room;
+        this.config.room = channel;
         this.send( msg );
         this.config.room = oldRoom;
     }
