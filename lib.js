@@ -133,4 +133,10 @@ export default {
         });
     },
 
+    sendToChannel( msg, channel ) {
+        this.config.room = m.channel;
+        this.send( msg );
+        this.config.room = oldRoom;
+    }
+
 };
