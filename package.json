@@ -1,6 +1,6 @@
 {
   "name": "@bitwave/chat-bot",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A simple bot library for [bitwave.tv]'s chat",
   "main": "lib.js",
   "scripts": {
