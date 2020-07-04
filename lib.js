@@ -157,7 +157,8 @@ const commandParser = m => {
 
     const command = commandParserSettings.commands.get(args[0]);
     if( command ) {
-        command( m, args.splice(1, 1) );
+        args.shift();
+        command( m, args );
     } else {
         $log.info( `No command ${args[0]} found` );
     }
@@ -212,6 +213,9 @@ export default {
         this.config.room = channel;
         this.send( msg );
         this.config.room = oldRoom;
-    }
+    },
+
+    async updateUsernames() { await api.updateUsernames(); },
+    get channelViewers() { return api.channelViewers; },
 
 };
