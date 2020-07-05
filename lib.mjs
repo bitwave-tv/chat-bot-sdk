@@ -1,6 +1,6 @@
 "use strict";
 import api from '@bitwave/chat-client';
-import $log from './log.js';
+import $log from './log.mjs';
 
 import TurndownService from 'turndown';
 const turndownService = new TurndownService();
