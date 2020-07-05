@@ -131,17 +131,27 @@ const roomCheck = ( m ) => {
  * Settings for the command parser
  */
 const commandParserSettings = {
-    prefix: '!', /**< Command prefix */
-    commands: new Map(), /**< Mapping of command name -> binary function ( message, args ) */
+    prefix: ['!'], /**< Command prefix */
+    commands: new Map(), /**< Mapping of command name -> {n-ary function ( message, ...args ), [prefix, global]} */
 };
 
 /**
- * Filter that checks whether the message is a command
+ * Filter that checks whether the message is a command.
  * @param m Message object
  * @return @p m if it is a command, false otherwise.
  */
 const isCommand = m => {
-    return m.message.startsWith( commandParserSettings.prefix ) ? m : false;
+    let customPrefix = false;
+    for( const c of commandParserSettings.commands.values() ) {
+        if( c.prefix === undefined ) continue;
+        if( m.message.startsWith( c.prefix ) ) {
+            customPrefix = true;
+            break;
+        }
+    }
+    return customPrefix ||
+        commandParserSettings.prefix.some( p => m.message.startsWith( p ) )
+        ? m : false;
 };
 
 /**
@@ -155,10 +165,12 @@ const commandParser = m => {
     m.message = m.message.replace( commandParserSettings.prefix, "" );
     const args = m.message.split(' ');
 
-    const command = commandParserSettings.commands.get(args[0]);
-    if( command ) {
+    const commandObject = commandParserSettings.commands.get(args[0]);
+    if( commandObject ) {
+        if( m.channel !== config.room &&
+            (commandObject.global !== undefined && !commandObject.global) ) return;
         args.shift();
-        command( m, args );
+        commandObject.command( m, ...args );
     } else {
         $log.info( `No command ${args[0]} found` );
     }
