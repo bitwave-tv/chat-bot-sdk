@@ -53,26 +53,6 @@ const maybeCompose = ( f, g ) => {
 };
 
 /**
- * Handles received messages.
- * It first applies all transformers to the message, then all filters.
- * If it passes them all, it gets sent to the consumer.
- * @param self this belonging to the exported object
- * @param ms An array of message objects
- */
-const handleMessages = ( self, ms ) => {
-    const transform = self.transformers.reduce( (x, y) => maybeCompose(x, y), id );
-    const filter    = self.     filters.reduce( (x, y) => maybeCompose(x, y), id );
-    for( const m of ms ) {
-        const mp = transform( m );
-        if( mp ) {
-            if( filter( mp ) ) {
-                self.consumer( mp );
-            }
-        }
-    }
-};
-
-/**
  * A transformer that converts received HTML into markdown.
  * @param m Message object
  * @return Message object with markdown body
@@ -114,6 +94,27 @@ const reduceHtml = m => {
     mp.message = turndownService.turndown( mp.message );
 
     return mp;
+};
+
+/**
+ * Handles received messages.
+ * It first applies all transformers to the message, then all filters.
+ * If it passes them all, it gets sent to the consumer.
+ * @param self this belonging to the exported object
+ * @param ms An array of message objects
+ */
+const handleMessages = ( self, ms ) => {
+    const transform = self.transformers.reduce( (x, y) => maybeCompose(x, y), id );
+    const filter    = self.     filters.reduce( (x, y) => maybeCompose(x, y), id );
+    for( const m of ms ) {
+        let mp = reduceHtml( m );
+        if( filter( mp ) ) {
+            mp = transform( mp );
+            if( mp ) {
+                self.consumer( mp );
+            }
+        }
+    }
 };
 
 /**
@@ -208,6 +209,7 @@ export default {
      * @param msg String
      */
     send( msg ) {
+        $log.info( `Sent message: "${msg}"` );
         api.sendMessage({
             message: msg,
             channel: this.config.room,
