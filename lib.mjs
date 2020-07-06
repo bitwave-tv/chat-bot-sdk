@@ -142,6 +142,9 @@ const commandParserSettings = {
  * @return @p m if it is a command, false otherwise.
  */
 const isCommand = m => {
+    const defaultPrefixes = commandParserSettings.prefix.some( p => m.message.startsWith( p ) );
+    if( defaultPrefixes ) return m;
+
     let customPrefix = false;
     for( const c of commandParserSettings.commands.values() ) {
         if( c.prefix === undefined ) continue;
@@ -150,9 +153,8 @@ const isCommand = m => {
             break;
         }
     }
-    return customPrefix ||
-        commandParserSettings.prefix.some( p => m.message.startsWith( p ) )
-        ? m : false;
+
+    return customPrefix ? m : false;
 };
 
 /**
