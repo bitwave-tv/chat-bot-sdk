@@ -1,9 +1,7 @@
 "use strict";
 import api from '@bitwave/chat-client';
 import $log from './log.mjs';
-
-import TurndownService from 'turndown';
-const turndownService = new TurndownService();
+import { functional, helpers } from './helpers.mjs';
 
 /**
  * Global config. Gets used for sending/receiving messages.
@@ -16,87 +14,6 @@ let config = {
 };
 
 /**
- * The identity function
- * @see handleMessages()
- * @param a Anything
- * @return @p a
- */
-const id = a => a;
-
-/**
- * Composition for unary functions
- * @param f Outer (later, 2nd) function
- * @param g Inner (earlier, 1st) function
- * @return New function x => f(g(x))
- */
-const compose = ( f, g ) => {
-    return x => {
-        return f( g( x ) );
-    };
-};
-
-/**
- * Maybe monad composition for unary functions
- * If @p f or @p g or f(x) return a falsy value, it will propagate through
- * @param f Outer (later, 2nd) function
- * @param g Inner (earlier, 1st) function
- * @return New function that composes @p f and @p g, unless @p f, @p g, or the intermediary result is falsy (it returns undefined, i.e. Nothing)
- */
-const maybeCompose = ( f, g ) => {
-    return x => {
-        if( !f || !g ) return undefined;
-
-        const y = g( x );
-        if( !y ) return undefined;
-        else return f( x );
-    };
-};
-
-/**
- * A transformer that converts received HTML into markdown.
- * @param m Message object
- * @return Message object with markdown body
- */
-const reduceHtml = m => {
-    const mp = m;
-
-    const unescapeHtml = unsafe => {
-        return unsafe
-            .replace( /&amp;/g,  `&` )
-            .replace( /&lt;/g,   `<` )
-            .replace( /&gt;/g,   `>` )
-            .replace( /&quot;/g, `"` )
-            .replace( /&#39;/g,  `'` );
-    };
-
-    // <p></p>
-    mp.message = mp.message.replace( /<\/?p[\w =#"':\/\\.\-?]*>/gi, "" );
-
-    // <a>gets left</a>
-    // Custom links are text in <a>, and then the link in <kbd>
-    mp.message = mp.message.replace( /<\/?a[\w -=#"':\/\\.\-?]*>/gi, "" );
-    mp.message = mp.message.replace( "<kbd>", "" );
-    mp.message = mp.message.replace( "</kbd>", "" );
-
-    // <img> to :emotes:
-    mp.message = mp.message.replace( /<img[\w -=#"':\/\\.\-?]*>/gi, m => {
-        // (((, ))), :), :( are rendered differently
-        // (They dont even show up in the emote list)
-        //
-        // It wouldn't be so bad if the two echos were 'echol' and 'echor', but
-        //  one echo is flipped with CSS.
-        if( m.includes('alt="echo"') ) {
-            return m.includes('scaleX(-1)') ? "(((" : ")))";
-        }
-        return m.match( /alt="([\w:()]+)"/ )[1];
-    });
-
-    mp.message = turndownService.turndown( mp.message );
-
-    return mp;
-};
-
-/**
  * Handles received messages.
  * It first applies all transformers to the message, then all filters.
  * If it passes them all, it gets sent to the consumer.
@@ -104,98 +21,75 @@ const reduceHtml = m => {
  * @param ms An array of message objects
  */
 const handleMessages = ( self, ms ) => {
-    const transform = self.transformers.reduce( (x, y) => maybeCompose(x, y), id );
-    const filter    = self.     filters.reduce( (x, y) => maybeCompose(x, y), id );
+    const transform = self.transformers.reduce( (x, y) => functional.maybeCompose(x, y), functional.id );
+    const filter    = self.     filters.reduce( (x, y) => functional.maybeCompose(x, y), functional.id );
     for( const m of ms ) {
-        let mp = reduceHtml( m );
+        let mp = helpers.reduceHtml( m );
         if( filter( mp ) ) {
             mp = transform( mp );
             if( mp ) {
-                self.consumer( mp );
+                const result = self.consumer( mp );
+                if( typeof result === 'string' ) {
+                    self.send( result );
+                } else if( result && result[0] !== undefined && result[1] !== undefined ) {
+                    self.sendToChannel( result[0], result[1] );
+                }
             }
         }
     }
 };
 
+const roomCheck = m => helpers.roomCheck( m, config );
+
 /**
- * Filter that checks message visibility.
- * Uses global config room and global.
+ * Sends @p msg to current channel
+ * @param msg String
+ */
+const send = msg => {
+    $log.info( `Sent message: "${msg}"` );
+    api.sendMessage({
+        message: msg,
+        channel: config.room,
+        global: config.global,
+        showBadge: true,
+    });
+};
+
+/**
+ * Sends @p msg to channel @p channel, and then returns to the old channel
  * @see config
- * @param m Message object
- * @return The message object if it is visible, undefined otherwise
  */
-const roomCheck = ( m ) => {
-    return ( m.channel !== config.room && !config.global ) ? undefined : m;
+const sendToChannel = ( msg, channel ) => {
+    const oldRoom = config.room;
+    config.room = channel;
+    send( msg );
+    config.room = oldRoom;
 };
 
-/**
- * Settings for the command parser
- */
-const commandParserSettings = {
-    prefix: ['!'], /**< Command prefix */
-    commands: new Map(), /**< Mapping of command name -> {n-ary function ( message, ...args ), [prefix, global]} */
-};
-
-/**
- * Filter that checks whether the message is a command.
- * @param m Message object
- * @return @p m if it is a command, false otherwise.
- */
-const isCommand = m => {
-    const defaultPrefixes = commandParserSettings.prefix.some( p => m.message.startsWith( p ) );
-    if( defaultPrefixes ) return m;
-
-    let customPrefix = false;
-    for( const c of commandParserSettings.commands.values() ) {
-        if( c.prefix === undefined ) continue;
-        if( m.message.startsWith( c.prefix ) ) {
-            customPrefix = true;
-            break;
-        }
-    }
-
-    return customPrefix ? m : false;
-};
-
-/**
- * The command parser. The default message consumer.
- * Is configured in #commandParserSettings
- * @see commandParserSettings
- * @param m Message object
- */
-const commandParser = m => {
-    // removes prefix
-    m.message = m.message.replace( commandParserSettings.prefix, "" );
-    const args = m.message.split(' ');
-
-    const commandObject = commandParserSettings.commands.get(args[0]);
-    if( commandObject ) {
-        if( m.channel !== config.room &&
-            (commandObject.global !== undefined && !commandObject.global) ) return;
-        args.shift();
-        commandObject.command( m, ...args );
-    } else {
-        $log.info( `No command ${args[0]} found` );
-    }
-};
+import commandParser from './commandParser.mjs';
+commandParser._config_getter = () => config;
 
 export default {
 
     get config() { return config; }, /**< Config object. Changes are live */
     set config(c) { config = c; },
 
-    get commandParserSettings() { return commandParserSettings; }, /**< Settings for the command parser */
-    set commandParserSettings(s) { commandParserSettings = s; },
+    get commandParserSettings() { return commandParser.commandParserSettings; }, /**< Settings for the command parser */
+    set commandParserSettings(s) { commandParser.commandParserSettings = s; },
 
-    transformers: [ reduceHtml ], /**< An array of unary functions (Message -> Maybe Message). Called, in order, before filtering */
-    filters: [ roomCheck, isCommand ], /**< An array of unary functions (Message -> Maybe Message). Order must not matter, must not change the object. Called after transformers */
+    transformers: [ helpers.reduceHtml ], /**< An array of unary functions (Message -> Maybe Message). Called, in order, before filtering */
+    filters: [ roomCheck, commandParser.isCommand ], /**< An array of unary functions (Message -> Maybe Message). Order must not matter, must not change the object. Called after transformers */
 
     /**
      * Function called after transformers and filters.
      * By default, it prints to console and forwards to the command parser.
      * @param m Message object
      */
-    consumer( m ) { console.log( m ); commandParser( m ); },
+    consumer( m ) {
+        console.log( m );
+        const result = commandParser.pipedCommandParser( m );
+        return result;
+    },
 
     /**
      * Starts connection to server with configuration from #config
@@ -211,13 +105,7 @@ export default {
      * @param msg String
      */
     send( msg ) {
-        $log.info( `Sent message: "${msg}"` );
-        api.sendMessage({
-            message: msg,
-            channel: this.config.room,
-            global: this.config.global,
-            showBadge: true,
-        });
+        send( msg );
     },
 
     /**
@@ -225,10 +113,7 @@ export default {
      * @see config
      */
     sendToChannel( msg, channel ) {
-        const oldRoom = this.config.room;
-        this.config.room = channel;
-        this.send( msg );
-        this.config.room = oldRoom;
+        sendToChannel( msg, channel );
     },
 
     async updateUsernames() { await api.updateUsernames(); },
