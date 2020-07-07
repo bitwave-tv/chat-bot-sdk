@@ -1,8 +1,8 @@
 {
   "name": "@bitwave/chat-bot",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "A simple bot library for [bitwave.tv]'s chat",
-  "main": "lib.js",
+  "main": "lib.mjs",
   "scripts": {
     "test": "echo \"TODO: testing. Nothing to see here. Move along...\""
   },
