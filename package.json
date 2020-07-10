@@ -1,7 +1,7 @@
 {
-  "name": "@bitwave/chat-bot",
-  "version": "0.2.2",
-  "description": "A simple bot library for [bitwave.tv]'s chat",
+  "name": "@bitwave/chat-bot-sdk",
+  "version": "0.3.0",
+  "description": "A simple chat bot sdk for [bitwave.tv]'s chat",
   "main": "lib.mjs",
   "scripts": {
     "test": "echo \"TODO: testing. Nothing to see here. Move along...\""
@@ -9,6 +9,7 @@
   "keywords": [
     "bot",
     "library",
+    "sdk",
     "chat",
     "bitwave"
   ],
@@ -21,10 +22,10 @@
   "devDependencies": {},
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bitwave-tv/chat-bot.git"
+    "url": "git+https://github.com/bitwave-tv/chat-bot-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/bitwave-tv/chat-bot/issues"
+    "url": "https://github.com/bitwave-tv/chat-bot-sdk/issues"
   },
-  "homepage": "https://github.com/bitwave-tv/chat-bot#readme"
+  "homepage": "https://github.com/bitwave-tv/chat-bot-sdk#readme"
 }

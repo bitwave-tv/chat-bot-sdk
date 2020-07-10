@@ -1,10 +1,10 @@
-# chat-bot
-A simple bot library for [bitwave.tv]'s chat
+# chat-bot-sdk
+A simple chat bot SDK for [bitwave.tv]'s chat
 
 Install it with.
 
 ```bash
-npm install @bitwave/chat-bot
+npm install @bitwave/chat-bot-sdk
 ```
 ------
 
