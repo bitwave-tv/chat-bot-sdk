@@ -1,5 +1,6 @@
 "use strict";
-import api from '@bitwave/chat-client';
+import  _api from '@bitwave/chat-client';
+const api = _api.default;
 import $log from './log.mjs';
 import { functional, helpers } from './helpers.mjs';
 
