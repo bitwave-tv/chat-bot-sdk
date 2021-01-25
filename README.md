@@ -32,7 +32,11 @@ The exported object has three key properties:
 ### Command parser
 
 The command parser is configured in the `commandParserSettings` object. It contains
-the message `prefix`, a map of `commands` (command name -> function).
+the message `prefix`, a map of `commands` (command name -> {command: function}).
+
+The command function receives the message object that triggered it as the first parameter.
+Each whitespace-separated block is sent as a subsequent parameter. You can write `...rest`
+to collect all the individual arguments into an array.
 
 Command functions take two arguments: the message that triggered them, and an array of
 arguments.

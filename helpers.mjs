@@ -72,6 +72,8 @@ export const helpers = {
 
         mp.message = turndownService.turndown( mp.message );
 
+        mp.message = mp.message.replace( /\\\\\\/gi, "" );
+
         return mp;
     },
 
